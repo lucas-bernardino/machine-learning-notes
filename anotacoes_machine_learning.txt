@@ -1,0 +1,33 @@
+* Think of a situation where you're trying to filter out whether a email is a span or not. If you were to write a classical algorithm for that, you'd need to understand the patterns
+that caracterizes a span and then write the code for it. However, suppose that the company sending these emails realize that they're emails are not being characterized as a span and change the words
+that they're using so your patterns are no longer valid, forcing you to rewrite the algorithm again. With a ML approach, you wouldn't need to be changing the algorithm as the company changes the way the email 
+is written, because in a machine learning approach the model would automatically notice these new changes, making it a lot easier to main the code and filtering the spans.
+
+* Machine Learning can be classified according to the amount and type of supervision they get.
+  * Supervised learning: the training data you feed the algorithm includes the desired solutions. A typical task for this type is classification, like with the span filter model above, where it's trained with 
+  the data and the solutions and it needs to be able to classify. Another typical task is to predict a target numeric value, such as the price of a car, given a set of predictors (mileage, age, brand....). This sort
+  of task is called regression. k-Nearest Neighbors, Linear Regression, Logistic Regression, Support Vector Machines, Decision Tree and Random Forests, Neural Networks are all examples of supervised learning.
+  * Unsupervised Learning: In unsupervised learning, the training data is unlabeled and the model tries to learn without a teacher. This type of learning is very useful when you don't know how to classify your data.
+  * Reinforcement Learning: the learning model gets rewards or penalties depending if it has perfomed the right action and it tries to get the most reward over time.
+
+* For Linear Regression problems, people typically use a cost function that measures the distance between the linear model's predictions and the training examples; the objective is to minimze this distance. This is where
+Linear Regression comes in: you feed it your training examples and it finds the parameters that make the linear model fit best to your data. This is called training the model. 
+
+* An important paper published in 2001 by Microsoft showed that very different Machine Learning algorithms, including simple ones, perfomed almost identically well on a complex problem once they were given enough data.
+Sometimes, data matters more than algorithms for complex problems. However, for small and medium sized datasets, the right algorithm is still very important.
+
+* If the sample is too small, you'll have sampling noise, and even very large samples can be nonrepresentative if the sampling method is flawed. This is called sampling bias. A typical example of what a sampling 
+bias looks like is in a election pool. Even if you have large amounts of data but your pool was done in only one area, the prediction might be way different than the actual results because you were biased and chose
+all the people in a region while neglecting people from other regions.
+
+* Most data scientists spend a large portion of their time only cleaning up the data in order to try to remove errors, outliers and noises. 
+
+* These things mentioned above are examples of bad data. Now, let's look at some examples of bad algorithms.
+  * Overfitting the Training Data: it happens when algorithms fits too close or even exactly to its training data resulting in a model that doesn't perform well. The possible solutions are: 
+    * To simplify the model by selecting one with fewer parameters (like a linear model rather than a high-degree polynomial), by reducing the number of attributes in the training data or by constraining the model.
+    * To gather more training data 
+    * To reduce the noise in the training data(e.g, fix data errors and remove outliers).
+    * Constraining a model to make it simpler and reduce the risk of overfitting is called regularization. 
+
+* Testing and Validating: usually, the data is split into two sets: the training set and the test set. The error rate in NEW cases is called generalization error and this values tells you how well your model will
+perform on instances it has never seen before. If the training error is low (your model makes few mistakes on the training set) but the generalization is high, it means that your model is overfitting the training data.
