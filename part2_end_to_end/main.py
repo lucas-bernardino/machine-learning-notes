@@ -125,6 +125,18 @@ def clean_data():
     housing_text_column = housing[["ocean_proximity"]]
     housing_text_converted = ordinal_encoder.fit_transform(housing_text_column)
 
+    
+    # There's just an issue with this representation, where categories 0 and 4 are more similar than 0 and 1.
+    # To fix it, we can create a binary attribute per category, where one attribute equal to 1 when the category 
+    # is <IH OCEAN (and 0 otherwise), another attribute equal to 1 when the category is INLAND (and 0 otherwise) 
+    # and so on. This is called one-hot encoding:
+    from sklearn.preprocessing import OneHotEncoder
+    cat_encoder = OneHotEncoder()
+    housing_cat_1hot = cat_encoder.fit_transform(housing_text_column)
+
+
+
+
     # That was an example of a Transformer. However, often we'll need to write our own transformer in order to do a custom cleanup.
     # And for that, we need our transformer to work seamlessly with Scikit-Learn functionalities. To do that, we basically need
     # to create a class and implement three methods: fit() (returning self), transform(), and fit_transform(). We get the last 
@@ -151,7 +163,10 @@ def clean_data():
 
     attr_adder = CombinedAttributesAdder(add_bedrooms_per_room = False)
     housing_extra_attrbs = attr_adder.transform(housing.values)
-    print(housing_extra_attrbs)
+
+
+    return housing_num
+
 
 if __name__ == "__main__":
     clean_data()
