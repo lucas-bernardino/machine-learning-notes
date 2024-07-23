@@ -88,6 +88,70 @@ def getting_correlations():
 
     # We can see that our new attributes are much more correlated with the median house than the ones we had before.
 
+def clean_data():
+    df_train, _ = get_biased_strat_sampling()
+    housing = df_train.drop("median_house_value", axis=1)
+    housing_labels = df_train["median_house_value"].copy()
+
+    # Most ML algorithms can't work with missing features. The column total_bedrooms has some missing values. There are 
+    # a few ways we can fix this:
+    # * Get rid of the corresponding districts
+    # * Get rid of the whole attribute
+    # * Set the values to some value (zero, the mean, the median, etc)
+    
+    # housing.dropna(subset=["total_bedrooms"])  ## option 1
+    # housing.drop("total_bedrooms", axis=1)  ## option 2
+    # median = housing["total_bedrooms"].median()  ## option 3
+    # housing["total_bedrooms"].fillna(median, inplace=True)  ## option 3
+
+    
+    # There's a built-in class that takes care of missing values in sklearn: SimpleImputer
+    from sklearn.impute import SimpleImputer
+    imputer = SimpleImputer(strategy="median")
+    
+    # We can only use numerical attributes, so we need to make a copy by excluding the ocean_proximity, which is made up of words.
+    housing_num = housing.drop("ocean_proximity", axis=1)
+    imputer.fit(housing_num)
+
+    # We can use this trained imputer to transform the trainong set by replacing missing  values by the learned medians:
+    X = imputer.transform(housing_num)
+    housing_tr = pd.DataFrame(X, columns=housing_num.columns)
+    
+    
+    # Remember that we left out the column ocean_proximity because it's a text attribute. Let's convert it from text to numbers 
+    # by using Scikit-Learn's OrdinalEncoder class:
+    from sklearn.preprocessing import OrdinalEncoder
+    ordinal_encoder = OrdinalEncoder()
+    housing_text_column = housing[["ocean_proximity"]]
+    housing_text_converted = ordinal_encoder.fit_transform(housing_text_column)
+
+    # That was an example of a Transformer. However, often we'll need to write our own transformer in order to do a custom cleanup.
+    # And for that, we need our transformer to work seamlessly with Scikit-Learn functionalities. To do that, we basically need
+    # to create a class and implement three methods: fit() (returning self), transform(), and fit_transform(). We get the last 
+    # one for free by simply adding TransformerMixin as a base class. Similarly, if we add BaseEstimator as a base class, we get 
+    # two extra methods (get_params() and set_params()) that can be useful later on.
+    # This is an example of what a small transformer class that adds some combined attributes we've talked before:
+
+    from sklearn.base import BaseEstimator, TransformerMixin
+    rooms_ix, bedrooms_ix, population_ix, households_ix = 3, 4, 5, 6
+
+    class CombinedAttributesAdder(BaseEstimator, TransformerMixin): 
+        def __init__(self, add_bedrooms_per_room = True):
+            self.add_bedrooms_per_room = add_bedrooms_per_room
+        def fit(self, X, y=None):
+            return self
+        def transform(self, X, y=None):
+            rooms_per_household = X[:, rooms_ix] / X[:, households_ix]
+            population_per_household = X[:, population_ix] / X[:, households_ix]
+            if self.add_bedrooms_per_room:
+                bedrooms_per_room = X[: , bedrooms_ix] / X[:, rooms_ix]
+                return np.c_[X, rooms_per_household, population_per_household, bedrooms_per_room]
+            else: 
+                return np.c_[X, rooms_per_household, population_per_household]
+
+    attr_adder = CombinedAttributesAdder(add_bedrooms_per_room = False)
+    housing_extra_attrbs = attr_adder.transform(housing.values)
+    print(housing_extra_attrbs)
 
 if __name__ == "__main__":
-    getting_correlations()
+    clean_data()
