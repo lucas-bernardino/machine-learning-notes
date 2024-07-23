@@ -168,5 +168,81 @@ def clean_data():
     return housing_num
 
 
+def feature_scaling():
+    # Machine Learning Algorithms don't perform well when the input numerical attributes have very different scales. 
+    # This is the case for the housing data: the total number of rooms ranges from about 6 to 39 320, while 
+    # the median income only range from 0 to 15.
+    
+    # There are two common ways to get all attributes to have the same scale: min-max scaling (normalization) and standardization.
+    
+    # Min-max scaling (also called as normalization) works like this: valures are shifted and rescaled so that 
+    # they end up ranging from 0 to 1. This is done by subtracting the min value and diving by the max minus the min.
+    # There's a built-in transformer in Scikit-Learn called MinMaxScaler.
+    
+    # Standardization is different. It works by first subtracting the mean value (so standardized values always 
+    # have a zero mean), and then it divides by the standard deviation so that the resulting distribution has unit variance.
+    # Unlike min-max, standardization does not bound values to a specific range, which can be a problem for some algs. like NN,
+    # which expect values from 0 to 1. The benefit of standardization is that it's less affect by outliers.
+    print("No code for this part, only important theory :)")
+
+def transformation_pipelines():
+    # Often, transformations need to be executed in the right order. There's a Scikit-Learn class called Pipeline to help
+    # with these sequences:
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.impute import SimpleImputer
+    from sklearn.base import BaseEstimator, TransformerMixin
+
+    rooms_ix, bedrooms_ix, population_ix, households_ix = 3, 4, 5, 6
+    housing_num = clean_data()
+
+    class CombinedAttributesAdder(BaseEstimator, TransformerMixin): 
+        def __init__(self, add_bedrooms_per_room = True):
+            self.add_bedrooms_per_room = add_bedrooms_per_room
+        def fit(self, X, y=None):
+            return self
+        def transform(self, X, y=None):
+            rooms_per_household = X[:, rooms_ix] / X[:, households_ix]
+            population_per_household = X[:, population_ix] / X[:, households_ix]
+            if self.add_bedrooms_per_room:
+                bedrooms_per_room = X[: , bedrooms_ix] / X[:, rooms_ix]
+                return np.c_[X, rooms_per_household, population_per_household, bedrooms_per_room]
+            else: 
+                return np.c_[X, rooms_per_household, population_per_household]
+
+    
+
+    num_pipeline = Pipeline([
+        ('imputer', SimpleImputer(strategy="median")),
+        ('attribs_adder', CombinedAttributesAdder()),
+        ('std_scaler', StandardScaler())
+    ])
+
+    housing_num_tr = num_pipeline.fit_transform(housing_num)
+
+
+    # So far, we have handled the text columns and the numerical columns separetely. It'd be better if we 
+    # could handle all columns, applying the appropriate transformations to each column.
+    from sklearn.compose import ColumnTransformer
+    from sklearn.preprocessing import OneHotEncoder
+
+    df_train, _ = get_biased_strat_sampling()
+    housing = df_train.drop("median_house_value", axis=1)
+
+    num_attribs = list(housing_num)
+    cat_attribs = ["ocean_proximity"]
+
+    full_pipeline = ColumnTransformer([
+        ("num", num_pipeline, num_attribs),
+        ("cat", OneHotEncoder(), cat_attribs),
+    ])
+    housing_prepared = full_pipeline.fit_transform(housing)
+
+    # That's it. We got the data, explored it, sampled a training set and a test set and we've 
+    # written the transformation pipelines to clean up and prepare our data for ML Algorithms.
+    # We're now ready to select and train a Machine Learning model.
+    return housing_prepared
+
+
 if __name__ == "__main__":
-    clean_data()
+    transformation_pipelines()
