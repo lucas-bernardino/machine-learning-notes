@@ -281,7 +281,40 @@ def training_model():
     # Prints 0.0. This doesn't mean that the model is perfect; it's much more likely that the model has badly overfit the data. One way to 
     # check this is to use part of the training set for training, and part for model validation.
 
+    
 
+    # We can better evaluate using cross-validation. One way to evaluate the Decision Tree would be to use the train_test_split function 
+    # to split the training set into a smaller training set and a validation set, then traing the model against the smaller training set 
+    # and evaluate them against the validation set. There's a built-in function that does this under the hood.
+    from sklearn.model_selection import cross_val_score
+    scores = cross_val_score(tree_reg, housing_prepared, housing_labels, scoring="neg_mean_squared_error", cv=10)
+    tree_rmse_scores = np.sqrt(-scores)
+    # tree_rmse_scores: 
+    # [73114.78069677 70314.49830377 68080.22869019 71851.95389678 70735.00698724 77456.2757269 71949.14981162 72764.17481871 67133.63212643 72061.85288086]
+    # tree_rmse_scores mean: 71581 and tree_rmse_scores standard deviation: 2690
+
+    # That means that the Decision Tree has a score of about 71 581, generally +- 2 690. 
+    # Lets compute the same scores for the Linear Regression:
+    lin_scores = cross_val_score(lin_reg, housing_prepared, housing_labels, scoring="neg_mean_squared_error", cv=10)
+    lin_rmse_scores = np.sqrt(-lin_scores)
+    # lin_rmse_scores mean: 69104 and lin_rmse_scores standard deviation: 2880
+    # The Decision Tree model is overfitting so badly that it performs worse than the Linear Regression model.
+    
+
+    # Let's try the last model: RandomForestRegressor. It works by training many Decision Trees on random subsets of the features, then 
+    # averaging out their predictions.
+    from sklearn.ensemble import RandomForestRegressor
+    forest_reg = RandomForestRegressor()
+    forest_reg.fit(housing_prepared, housing_labels)
+    housing_predictions = forest_reg.predict(housing_prepared)
+    forest_mse = mean_squared_error(housing_labels, housing_predictions)
+    forest_rmse = np.sqrt(forest_mse)
+    forest_reg_scores = cross_val_score(forest_reg, housing_prepared, housing_labels, scoring="neg_mean_squared_error", cv=10)
+    forest_reg_rmse_scores = np.sqrt(-forest_reg_scores) 
+    # forest_rmse: 18741.13
+    # forest_rmse_scores mean: 50317.07 and forest_rmse_scores standard deviation: 2219.52
+    # These results are much better. However, notice that the score on the training set is still much lower than on the validation sets, 
+    # meaning that the model is still overfitting the training set.
 
 
 if __name__ == "__main__":
