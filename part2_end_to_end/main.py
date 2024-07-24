@@ -244,5 +244,58 @@ def transformation_pipelines():
     return housing_prepared
 
 
+def training_model():
+    from sklearn.linear_model import LinearRegression
+    housing_prepared = transformation_pipelines()
+
+    strat_train_set, _ = get_biased_strat_sampling()
+    housing_labels = strat_train_set["median_house_value"].copy()
+    
+    # The .fit function fits the linear model and usually takes two parameters: X_train and Y_train.
+    # In our case, the X_trains is a matrix of shape (16512, 16), meaning that it contains 16512 data points and each point has 16 features.
+    # The Y_train is a matrix of shape (16512,), which represents the target data. Note that the length of Y must match the number of rows in X. 
+    # Also, in this case we have a multiple linear regression since we have multiple features instead of just one. So, instead of finding a 
+    # f(x) = ax + b, we would have f(x1, x2,..., x15) = a1*x1 + b1 + a2*x2 + b2 ...
+    lin_reg = LinearRegression()
+    lin_reg.fit(housing_prepared, housing_labels)
+    
+
+    # We can measure how accurate it is
+    from sklearn.metrics import mean_squared_error
+    housing_predictions = lin_reg.predict(housing_prepared)
+    lin_mse = mean_squared_error(housing_labels, housing_predictions)
+    lin_rmse = np.sqrt(lin_mse)    
+    # Prints 68627.87, meaning that the typical prediction error is about $68 628, which is not very good since most districts prices
+    # range between $120 000 and $265 000.
+
+    # Since the error is high, this can mean that the features do not provide enough information to make good predictions or that the model 
+    # is not good enoiugh. We could try to add more features, but let's first try a more complex model:
+    from sklearn.tree import DecisionTreeRegressor
+    tree_reg = DecisionTreeRegressor()
+    tree_reg.fit(housing_prepared, housing_labels)
+
+    # LEt's evaluate it on the training set:
+    housing_predictions = tree_reg.predict(housing_prepared)
+    tree_mse = mean_squared_error(housing_labels, housing_predictions)
+    tree_rmse = np.sqrt(tree_mse)
+    # Prints 0.0. This doesn't mean that the model is perfect; it's much more likely that the model has badly overfit the data. One way to 
+    # check this is to use part of the training set for training, and part for model validation.
+
+
+
+
 if __name__ == "__main__":
-    transformation_pipelines()
+    training_model()
+
+
+
+
+
+
+
+
+
+
+
+
+
