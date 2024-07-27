@@ -362,10 +362,32 @@ def fine_tuning():
 
     return best_estimator
 
+def evaluate():
+
+    # Now, it's time to evaluate the final model on the test set. The process is simple: get the predictors and the labels from our test set,
+    # run our full_pipeline to transform the data (call transform(), not fit_transform(), we don't want to fit the test set), and evaluate the final model
+    # on the test set.
+
+    final_model = fine_tuning()
+    _, strat_test_set = get_biased_strat_sampling()
+    
+    X_test = strat_test_set.drop("median_house_value", axis=1)
+    y_test = strat_test_set["median_house_value"].copy()
+
+    _, full_pipeline = transformation_pipelines()
+    X_test_prepared = full_pipeline.transform(X_test)
+
+    final_predictions = final_model.predict(X_test_prepared)
+
+    from sklearn.metrics import mean_squared_error
+
+    final_mse = mean_squared_error(y_test, final_predictions)
+    final_rmse = np.sqrt(final_mse) # 48135.26
+
 
 
 if __name__ == "__main__":
-    fine_tuning()
+    evaluate()
 
 
 
