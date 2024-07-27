@@ -241,12 +241,12 @@ def transformation_pipelines():
     # That's it. We got the data, explored it, sampled a training set and a test set and we've 
     # written the transformation pipelines to clean up and prepare our data for ML Algorithms.
     # We're now ready to select and train a Machine Learning model.
-    return housing_prepared
+    return housing_prepared, full_pipeline
 
 
 def training_model():
     from sklearn.linear_model import LinearRegression
-    housing_prepared = transformation_pipelines()
+    housing_prepared, _ = transformation_pipelines()
 
     strat_train_set, _ = get_biased_strat_sampling()
     housing_labels = strat_train_set["median_house_value"].copy()
@@ -315,10 +315,57 @@ def training_model():
     # forest_rmse_scores mean: 50317.07 and forest_rmse_scores standard deviation: 2219.52
     # These results are much better. However, notice that the score on the training set is still much lower than on the validation sets, 
     # meaning that the model is still overfitting the training set.
+    
+
+    return lin_reg, tree_reg, forest_reg
+
+
+def fine_tuning():
+    housing_prepared, _ = transformation_pipelines()
+
+    strat_train_set, _ = get_biased_strat_sampling()
+    housing_labels = strat_train_set["median_house_value"].copy()
+
+    # Let's assume we have some models and now we need to fine-tune them. We can do that in a few ways.
+    # Grid Search: One way to do that would be to play with the hyperparmaeters manually until we find a good combination of them.
+    # Instead, we can use GridSearchCV to do that for us. We only need to tekk which hyperparmaeters we want to experiment and 
+    # what values tro try out and it will automatically evaluate all the possible combinations of them, using cross-validation.
+    # PS: These hyperparameters are not learned from the data but instead are specified by the practitioner to optimize the performance of the model.
+
+    from sklearn.model_selection import GridSearchCV
+    from sklearn.ensemble import RandomForestRegressor
+    
+    params_grid = [
+        {'n_estimators': [3, 10, 30], 'max_features': [2, 4, 6, 8]},
+        {'bootstrap': [False], 'n_estimators': [3, 10], 'max_features': [2, 3, 4]}
+    ]
+
+    forest_reg = RandomForestRegressor()
+    grid_search = GridSearchCV(forest_reg, params_grid, cv=5, scoring='neg_mean_squared_error', return_train_score=True, verbose=4)
+    grid_search.fit(housing_prepared, housing_labels)
+
+    # Tip: When we have no idea what value a hyperparmeter should have, a simple approach is to try out consecutive powers of 10 or 
+    # a smaller number if you want a more fine-grained search.
+    # The param_grid will make scikit-learn first evaluate 3 x 4 = 12 combinations of n_estimators and max_features and then 
+    # try all 2 x 3 = 6 combinations of hyperparameters in the second dict.
+    # That means that the grid search will explore 12 + 6 = 18 combinations of hyperparameters for the RandomForestRegressor, 
+    # training each model five times. So there will be 18 x 5 = 90 rounds of training.
+
+    best_params = grid_search.best_params_ # Best combination, which is {'max_features': 8, 'n_estimators': 30}
+    best_estimator = grid_search.best_estimator_ # Best estimator, which outputs the whole class of RandomForestRegressor with the best hyperparams.
+
+
+    # The drid search approach is fine when we're exploring relatively few combinations. However, when the hyperparameter search page 
+    # is large, it's often preferable to use RandomizedSearchCV. It's similar to GridSearchCv, but instead of trying out all possible 
+    # combinations, it evaluates a given number of random combinations by selecting a random value for each hyperparameter at every iteration.
+
+
+    return best_estimator
+
 
 
 if __name__ == "__main__":
-    training_model()
+    fine_tuning()
 
 
 
